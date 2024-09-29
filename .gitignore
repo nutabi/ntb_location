@@ -1,0 +1,5 @@
+/target
+/.sqlx
+/.vscode
+.env
+data.db
