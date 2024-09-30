@@ -155,7 +155,7 @@ async fn get_all_locations(State(app): State<App>, Query(query): Query<GetLocQue
 async fn main() -> Result<()> {
     // Load environment variables
     #[cfg(debug_assertions)]
-    dotenv::dotenv().context("Cannot load .env file")?;
+    dotenvy::dotenv().context("Cannot load .env file")?;
 
     // Set up tracing
     tracing_subscriber::registry()
