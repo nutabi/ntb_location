@@ -90,12 +90,15 @@ struct App {
 /// 
 /// It will insert a new location record into the database as requested by the client.
 async fn post_location(State(app): State<App>, Json(data): Json<PostLocData>) -> impl IntoResponse {
+    // Log the request
     tracing::info!("POST / <- {:?}", data);
 
+    // Sanitise the source string
     if !sanitise_string(&data.source) {
         return (StatusCode::BAD_REQUEST, "Invalid source").into_response();
     }
 
+    // Insert the record into the database
     let result = sqlx::query_as!(
         DbLocData,
         "INSERT INTO locations (source, latitude, longitude) VALUES (?, ?, ?) RETURNING *",
@@ -104,6 +107,7 @@ async fn post_location(State(app): State<App>, Json(data): Json<PostLocData>) ->
         data.longitude,
     ).fetch_one(&app.database_pool).await;
 
+    // Verify the result and return the appropriate response
     if let Ok(data) = result {
         tracing::info!("Record added: {:?}", data);
         return (StatusCode::OK, "Record added").into_response();
@@ -118,14 +122,17 @@ async fn post_location(State(app): State<App>, Json(data): Json<PostLocData>) ->
 /// It will fetch all location records from the database as requested by the client. Optional parameters
 /// are used to filter the records.
 async fn get_all_locations(State(app): State<App>, Query(query): Query<GetLocQuery>) -> impl IntoResponse {
+    // Log the request
     tracing::info!("GET / <- {:?}", query);
 
+    // Sanitise the source string
     if let Some(ref s) = query.source {
         if !sanitise_string(s) {
             return (StatusCode::BAD_REQUEST, "Invalid source").into_response();
         }
     }
 
+    // Fetch the records from the database
     let result = sqlx::query_as!(
         DbLocData,
         r#"
@@ -142,6 +149,7 @@ async fn get_all_locations(State(app): State<App>, Query(query): Query<GetLocQue
     .fetch_all(&app.database_pool)
     .await;
     
+    // Verify the result and return the appropriate response
     if let Ok(data) = result {
         tracing::info!("{} records fetched: {:?}", data.len(), query);
         return Json(data).into_response();
